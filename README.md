@@ -14,11 +14,13 @@ Este proyecto está pensado como un prototipo de pipeline de edición automátic
 ## Estructura del proyecto
 
 - `config.py`: configuración general, rutas y parámetros de los modelos
-- `test_step1.py`: prueba de extracción de audio + transcripción
-- `test_step2.py`: prueba completa con transcripción y análisis del LLM
+- `test_step1.py`: script de prueba para extracción y transcripción
+- `test_step2.py`: script de prueba para transcripción + análisis del LLM
+- `src/main.py`: pipeline completo de extracción, transcripción, análisis y edición de clips
 - `src/audio/extractor.py`: extrae audio de archivos de video
 - `src/ai/transcriber.py`: transcribe audio con `faster-whisper`
-- `src/ai/orchestrator.py`: llama a Ollama y obtiene los timestamps del clip
+- `src/ai/orchestrator.py`: analiza la transcripción con Ollama y devuelve clips recomendados
+- `src/video/editor.py`: corta los clips y genera archivos de subtítulos
 - `data/`: carpeta para datos de entrada, salida y archivos temporales
 
 ## Requisitos
@@ -30,6 +32,7 @@ Este proyecto está pensado como un prototipo de pipeline de edición automátic
 - Paquetes Python:
   - `faster-whisper`
   - `requests`
+  - `moviepy`
 
 ## Instalación
 
@@ -62,21 +65,28 @@ ollama run llama3
 ## Uso
 
 1. Copia uno o más archivos `.mp4` a `data/input/`
-2. Ejecuta el paso 1 para extraer audio y transcribirlo:
+2. Ejecuta el pipeline completo:
+
+```bash
+source .venv/bin/activate
+python -m src.main
+```
+
+3. Si quieres ejecutar solo el primer paso (extracción + transcripción):
 
 ```bash
 source .venv/bin/activate
 python test_step1.py
 ```
 
-3. Ejecuta el paso 2 para extraer audio, transcribir y analizarlo con Ollama:
+4. Si quieres ejecutar solo el segundo paso (transcripción + análisis con Ollama):
 
 ```bash
 source .venv/bin/activate
 python test_step2.py
 ```
 
-4. Si quieres reiniciar la carpeta temporal:
+5. Si quieres reiniciar la carpeta temporal:
 
 ```bash
 rm -rf data/temp/*
@@ -173,6 +183,6 @@ Si el procesamiento es demasiado lento en CPU, prueba:
 
 ## Mejora futura
 
-- Añadir módulo de edición de video para recortar el clip con los timestamps devueltos.
-- Añadir validación de JSON más robusta y manejo de errores de Ollama.
-- Añadir requerimientos formales `requirements.txt`.
+- Añadir soporte para más formatos de video y audio.
+- Mejorar la generación de subtítulos con formato SRT.
+- Añadir opciones de configuración más detalladas para los prompts de Ollama.
