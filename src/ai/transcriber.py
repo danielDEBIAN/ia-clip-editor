@@ -12,13 +12,13 @@ def transcribe_local_audio(audio_path: Path) -> list:
         return []
 
     print(f"🤖 Cargando modelo de IA Whisper ('{config.WHISPER_MODEL_SIZE}')...")
-    
+
     # Configuración de aceleración de hardware:
     # Si tienes una GPU NVIDIA configurada con CUDA, usa device="cuda" y compute_type="float16"
     # Para probar de forma segura e inicial en cualquier procesador, dejamos "cpu" e "int8" (cuantizado)
     try:
         model = WhisperModel(
-            config.WHISPER_MODEL_SIZE, 
+            config.WHISPER_MODEL_SIZE,
             device="cpu",          # Cambia a "cuda" si tienes GPU dedicada con CUDA
             compute_type="int8"    # "int8" es ultra ligero para CPU. Usa "float16" para GPU.
         )
@@ -27,10 +27,10 @@ def transcribe_local_audio(audio_path: Path) -> list:
         return []
 
     print("🎙️ Transcribiendo audio en tiempo real (esto puede tomar un momento)...")
-    
+
     # Ejecutamos la transcripción forzando el idioma español para ahorrar tiempo de cómputo
     segments, info = model.transcribe(str(audio_path), beam_size=5, language="es")
-    
+
     print(f"📈 Idioma detectado de forma segura: {info.language} (Probabilidad: {info.language_probability:.2f})")
 
     transcripcion_estructurada = []
@@ -44,7 +44,7 @@ def transcribe_local_audio(audio_path: Path) -> list:
             "text": segment.text.strip()
         })
         # Imprime en consola un preview de lo que va escuchando la IA
-        print(f"[{round(segment.start, 1)}s -> {round(segment.end, 1)}s] {segment.text}")
+        # print(f"[{round(segment.start, 1)}s -> {round(segment.end, 1)}s] {segment.text}")
 
     print(f"✅ Transcripción completada. Se generaron {len(transcripcion_estructurada)} segmentos de texto.")
     return transcripcion_estructurada

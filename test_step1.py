@@ -24,7 +24,7 @@ def main():
         print("-" * 50)
         # Execución del Pipeline: Paso 2 (Transcripción)
         datos_transcripcion = transcribe_local_audio(audio_temporal)
-        
+
         print("\n🎉 ¡Éxito! Estructura de datos lista para el LLM:")
         # Mostramos los primeros 3 elementos del array resultante como ejemplo
         print(datos_transcripcion[:3])

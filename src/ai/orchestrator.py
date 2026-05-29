@@ -10,31 +10,37 @@ if str(root_path) not in sys.path:
 
 import config
 
-def analyze_transcript_for_clip(transcript_data: list) -> dict:
-    """
-    Envía la transcripción a Ollama para que el LLM local analice el contenido
-    y devuelva los timestamps de inicio y fin del mejor fragmento en formato JSON.
-    """
+def analyze_transcript_for_clips(transcript_data: list) -> list: # 👈 Cambiado a plural y retorna list
     if not transcript_data:
         print("⚠️ No hay datos de transcripción para analizar.")
-        return {}
+        return []
 
     print(f"🧠 Conectando con Ollama usando el modelo '{config.OLLAMA_MODEL}'...")
 
-    # Creamos el prompt del sistema estructurado
     prompt = f"""
-Eres un editor de video experto en Shorts y TikToks. 
-Tu tarea es analizar la siguiente transcripción, identificar el momento más interesante y seleccionar un fragmento continuo que dure entre 20 y 45 segundos en total. 
+Eres un editor de video experto en Shorts y TikToks.
+Tu tarea es analizar la siguiente transcripción completa y obligatoriamente extraer un listado con varios fragmentos distintos (busca al menos 2 o 3 momentos separados en el tiempo) de un video largo e identificar TODOS los momentos que sean interesantes, divertidos, coherentes o tengan potencial de ser un clip viral.
 
-[REGLA CRÍTICA]: El fragmento DEBE incluir al menos 8 líneas consecutivas de la transcripción. NO elijas solo 2 o 3 líneas. La diferencia entre 'fin' e 'inicio' debe ser obligatoriamente mayor a 20.
+[REGLAS CRÍTICAS]:
+1. Encuentra múltiples fragmentos (mínimo 2, máximo 5 si el video es largo).
+2. Cada fragmento debe ser continuo y abarcar varias líneas consecutivas (que dure entre 20 y 50 segundos cada uno).
+3. Los fragmentos NO deben encimarse o solaparse entre sí.
 
-Devuelve un objeto JSON con este formato exacto:
-{{
-  "inicio": <segundos_primera_linea>,
-  "fin": <segundos_ultima_linea>,
-  "gancho_detectado": "<texto_gancho>",
-  "justificacion": "<explicacion_corta>"
-}}
+Debes responder **ÚNICAMENTE** con un array/lista de objetos JSON. No agregues introducciones ni formato markdown. Usa este formato estricto:
+[
+  {{
+    "inicio": <segundos_inicio>,
+    "fin": <segundos_fin>,
+    "gancho_detectado": "<texto_gancho>",
+    "justificacion": "<explicacion_corta>"
+  }},
+  {{
+    "inicio": <segundos_inicio>,
+    "fin": <segundos_fin>,
+    "gancho_detectado": "<texto_gancho>",
+    "justificacion": "<explicacion_corta>"
+  }}
+]
 
 Transcripción:
 {json.dumps(transcript_data, ensure_ascii=False, indent=2)}
@@ -76,14 +82,24 @@ Transcripción:
             raw_response = raw_response[start_idx:end_idx + 1]
 
         # Parseamos la respuesta limpia
-        clip_decision = json.loads(raw_response)
-        # ----------------------------------------------------
+        data_parseada = json.loads(raw_response)
 
-        print("\n✨ La IA ha tomado una decisión sobre el mejor clip:")
-        print(f"⏱️  Corte: {clip_decision.get('inicio')}s -> {clip_decision.get('fin')}s")
-        print(f"💡 Razón: {clip_decision.get('justificacion')}\n")
+        # --- PARCHE DE ROBUSTEZ MULTI-CLIP ---
+        # Si la IA envolvió la lista en un diccionario (ej. {"clips": [...] o "fragmentos": [...]})
+        if isinstance(data_parseada, dict):
+            # Buscamos si alguna de las llaves internas contiene la lista de clips
+            for key, value in data_parseada.items():
+                if isinstance(value, list):
+                    data_parseada = value
+                    break
 
-        return clip_decision
+            # Si sigue siendo un diccionario y no encontramos listas internas, lo envolvemos en una lista
+            if isinstance(data_parseada, dict):
+                data_parseada = [data_parseada]
+        # -------------------------------------
+
+        print(f"\n✨ La IA ha procesado el contenido y definió {len(data_parseada)} corte(s).")
+        return data_parseada
 
     except requests.exceptions.ConnectionError:
         print("\n❌ Error: No se pudo conectar con Ollama.", file=sys.stderr)

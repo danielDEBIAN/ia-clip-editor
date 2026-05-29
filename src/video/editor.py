@@ -43,3 +43,39 @@ def cut_video_clip(video_path: Path, start_time: float, end_time: float, output_
     except Exception as e:
         print(f"❌ Error durante la edición/renderizado del video: {e}", file=sys.stderr)
         return False
+
+def create_subtitles_txt(transcript_data: list, start_time: float, end_time: float, output_txt_path: Path):
+    """
+    Filtra la transcripción original y genera un archivo .txt con las frases 
+    y marcas de tiempo que corresponden estrictamente al fragmento del clip.
+    """
+    def format_time(seconds: float) -> str:
+        """Helper para convertir segundos (ej. 75.5) a formato de reloj (01:15)"""
+        minutes = int(seconds // 60)
+        secs = int(seconds % 60)
+        return f"{minutes:02d}:{secs:02d}"
+
+    print(f"📄 Generando archivo de texto para subtítulos...")
+
+    try:
+        with open(output_txt_path, "w", encoding="utf-8") as f:
+            f.write(f"=== SUBTÍTULOS DEL CLIP ({format_time(start_time)} - {format_time(end_time)}) ===\n\n")
+
+            for segment in transcript_data:
+                seg_start = segment.get("start", 0)
+                seg_end = segment.get("end", 0)
+                text = segment.get("text", "")
+
+                # Verificamos si el segmento cae dentro del rango del clip
+                if seg_start >= start_time and seg_end <= end_time:
+                    # Calculamos el tiempo relativo desde el inicio del CLIP (para que empiece en 00:00)
+                    relative_start = format_time(seg_start - start_time)
+                    relative_end = format_time(seg_end - start_time)
+
+                    f.write(f"[{relative_start} -> {relative_end}] {text}\n")
+
+        print(f"✅ Archivo de subtítulos guardado en: {output_txt_path.name}")
+        return True
+    except Exception as e:
+        print(f"❌ Error al crear el archivo de texto de subtítulos: {e}")
+        return False

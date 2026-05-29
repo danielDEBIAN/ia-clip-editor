@@ -9,8 +9,8 @@ if str(root_path) not in sys.path:
 import config
 from src.audio.extractor import extract_audio
 from src.ai.transcriber import transcribe_local_audio
-from src.ai.orchestrator import analyze_transcript_for_clip
-from src.video.editor import cut_video_clip
+from src.ai.orchestrator import analyze_transcript_for_clips
+from src.video.editor import cut_video_clip, create_subtitles_txt
 
 def main():
     print("==================================================")
@@ -43,25 +43,46 @@ def main():
 
     print("\n" + "-"*40)
 
-    # 3. Análisis de Contenido (Ollama + LLM)
-    decision = analyze_transcript_for_clip(transcripcion)
-    if not decision:
+    # 3. Análisis de Contenido (Ollama ahora devuelve una lista de clips)
+    # Nota: Si cambiaste el nombre en orchestrator, actualízalo aquí también
+    lista_decisiones = analyze_transcript_for_clips(transcripcion)
+
+    if not lista_decisiones or not isinstance(lista_decisiones, list):
+        print("❌ La IA no devolvió una lista válida de clips o no encontró momentos clave.")
         return
 
-    inicio = decision.get("inicio")
-    fin = decision.get("fin")
-
+    print(f"🎬 ¡La IA encontró {len(lista_decisiones)} clips potenciales para editar!")
     print("\n" + "-"*40)
 
-    # 4. Corte y Renderizado Final (MoviePy)
-    exito = cut_video_clip(video_objetivo, inicio, fin, nombre_salida)
+    # 4. Bucle de Corte, Renderizado y generación de TXT
+    clips_creados = 0
+    for indice, decision in enumerate(lista_decisiones, start=1):
+        inicio = decision.get("inicio")
+        fin = decision.get("fin")
+        justificacion = decision.get("justificacion")
+
+        # Definimos los nombres de los archivos finales
+        nombre_salida_video = f"clip_{indice}_{video_objetivo.stem}.mp4"
+        nombre_salida_txt = f"clip_{indice}_{video_objetivo.stem}_subtitulos.txt"
+        ruta_txt_completa = config.OUTPUT_DIR / nombre_salida_txt
+
+        print(f"\n🎥 Procesando Clip #{indice} de {len(lista_decisiones)}...")
+        print(f"💡 Razón de la IA: {justificacion}")
+
+        # 1. Cortamos el video físico
+        exito_video = cut_video_clip(video_objetivo, inicio, fin, nombre_salida_video)
+
+        if exito_video:
+            # 2. Si el video se creó bien, generamos su TXT de subtítulos usando la transcripción que ya tenemos
+            create_subtitles_txt(transcripcion, inicio, fin, ruta_txt_completa)
+            clips_creados += 1
 
     print("==================================================")
-    if exito:
-        print("🏁 PIPELINE COMPLETADO AL 100% SIN COSTAR UN SOLO CENTAVO.")
-        print(f"📁 Revisa tu clip terminado en: data/output/{nombre_salida}")
+    if clips_creados > 0:
+        print(f"🏁 PIPELINE COMPLETADO. Se generaron {clips_creados} clips exitosamente.")
+        print(f"📁 Revisa tus archivos terminados en: data/output/")
     else:
-        print("❌ El proceso terminó con errores en la fase de video.")
+        print("❌ No se pudo renderizar ningún clip.")
     print("==================================================")
 
 if __name__ == "__main__":

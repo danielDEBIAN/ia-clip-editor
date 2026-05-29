@@ -23,17 +23,17 @@ def main():
         return
 
     print("-" * 50)
-    
+
     # 2. Transcribir con faster-whisper
     datos_transcripcion = transcribe_local_audio(audio_temporal)
     if not datos_transcripcion:
         return
 
     print("-" * 50)
-    
+
     # 3. Analizar y obtener los timestamps del mejor clip con Ollama
     decision_clip = analyze_transcript_for_clip(datos_transcripcion)
-    
+
     if decision_clip:
         print("🎉 ¡Pipeline de Inteligencia Artificial completado con éxito!")
         print(f"Listo para enviar estos tiempos al módulo de edición de video: {decision_clip.get('inicio')} a {decision_clip.get('fin')}")
