@@ -1,4 +1,5 @@
 import sys
+import json  # 👈 Añade esta importación arriba si no está
 from pathlib import Path
 
 # Asegurar rutas
@@ -36,10 +37,25 @@ def main():
 
     print("\n" + "-"*40)
 
-    # 2. Transcripción Local (faster-whisper)
-    transcripcion = transcribe_local_audio(audio_temporal)
-    if not transcripcion:
-        return
+    # 2. Transcripción Local (Con sistema de Caché Inteligente)
+    ruta_cache_transcripcion = config.TEMP_DIR / f"{video_objetivo.stem}_transcript.json"
+
+    if ruta_cache_transcripcion.exists():
+        print(f"📦 ¡Se encontró una transcripción guardada para este video! Cargando caché...")
+        with open(ruta_cache_transcripcion, "r", encoding="utf-8") as f:
+            transcripcion = json.load(f)
+        print(f"✅ Transcripción cargada instantáneamente ({len(transcripcion)} segmentos).")
+    else:
+        # Si no existe el caché, ponemos a trabajar a faster-whisper
+        transcripcion = transcribe_local_audio(audio_temporal)
+
+        if transcripcion:
+            # Guardamos el resultado en un archivo JSON para la próxima vez
+            with open(ruta_cache_transcripcion, "w", encoding="utf-8") as f:
+                json.dump(transcripcion, f, ensure_ascii=False, indent=2)
+            print(f"💾 Transcripción guardada en caché para futuras ejecuciones: {ruta_cache_transcripcion.name}")
+        else:
+            return
 
     print("\n" + "-"*40)
 
