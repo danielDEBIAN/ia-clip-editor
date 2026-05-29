@@ -1,0 +1,6 @@
+# Python enviroment and chache
+.venv/
+__pycache__/
+
+# Video data
+data/
