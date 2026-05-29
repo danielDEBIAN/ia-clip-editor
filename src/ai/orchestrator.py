@@ -17,16 +17,28 @@ def analyze_transcript_for_clips(transcript_data: list) -> list: # 👈 Cambiado
 
     print(f"🧠 Conectando con Ollama usando el modelo '{config.OLLAMA_MODEL}'...")
 
-    prompt = f"""
-Eres un editor de video experto en Shorts y TikToks.
-Tu tarea es analizar la siguiente transcripción completa y obligatoriamente extraer un listado con varios fragmentos distintos (busca al menos 2 o 3 momentos separados en el tiempo) de un video largo e identificar TODOS los momentos que sean interesantes, divertidos, coherentes o tengan potencial de ser un clip viral.
+    prompt = """
+Eres un editor de video experto en crear contenido viral para TikTok, Instagram Reels y YouTube Shorts.
+
+Tu tarea es analizar la transcripción completa de un video y extraer entre 2 y 4 momentos distintos que tengan alto potencial de volverse viral.
+
+Cada fragmento debe:
+- Durar entre 15 y 60 segundos (ideal: 20-40s).
+- Tener un **gancho fuerte en los primeros 3 segundos** (pregunta intrigante, sorpresa, emoción, declaración impactante).
+- Mantener coherencia: debe poder verse sin contexto previo.
+- Incluir un momento de **emoción, humor, sorpresa, revelación o cierre fuerte** (risa, giro, enseñanza rápida, llamada a acción).
+- Evitar fragmentos aburridos, transiciones lentas o contenido sin energía.
 
 [REGLAS CRÍTICAS]:
 1. Encuentra múltiples fragmentos (mínimo 2, máximo 5 si el video es largo).
 2. Cada fragmento debe ser continuo y abarcar varias líneas consecutivas (que dure entre 20 y 50 segundos cada uno).
 3. Los fragmentos NO deben encimarse o solaparse entre sí.
+4. El gancho debe estar claramente identificado en la primera parte del fragmento.
+5. El análisis debe basarse en el texto y los timestamps de la transcripción, no inventar información adicional.
 
-Debes responder **ÚNICAMENTE** con un array/lista de objetos JSON. No agregues introducciones ni formato markdown. Usa este formato estricto:
+[REGLAS DE FORMATO]:
+- Responde **ÚNICAMENTE** con un array JSON válido. Nada de texto extra, markdown o explicaciones.
+- Usa este formato exacto:
 [
   {{
     "inicio": <segundos_inicio>,
@@ -105,11 +117,11 @@ Transcripción:
         print("\n❌ Error: No se pudo conectar con Ollama.", file=sys.stderr)
         print("👉 Asegúrate de tener Ollama corriendo en segundo plano (`ollama serve`)", file=sys.stderr)
         print(f"👉 Y de haber descargado el modelo ejecutando: `ollama run {config.OLLAMA_MODEL}`", file=sys.stderr)
-        return {}
+        return []
     except json.JSONDecodeError:
         print("❌ Error: El LLM local no devolvió un formato JSON válido.", file=sys.stderr)
         print(f"Respuesta cruda de la IA: {raw_response}", file=sys.stderr)
-        return {}
+        return []
     except Exception as e:
         print(f"❌ Ocurrió un error inesperado al procesar la IA: {e}", file=sys.stderr)
-        return {}
+        return []

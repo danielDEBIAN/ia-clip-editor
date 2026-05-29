@@ -16,4 +16,4 @@ for folder in [INPUT_DIR, OUTPUT_DIR, TEMP_DIR]:
 # Configuraciones de IA Local
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "llama3"  # O el modelo ligero que elijas (ej. phi3)
-WHISPER_MODEL_SIZE = "medium"  # Puedes cambiar a 'medium' si tienes buena VRAM
+WHISPER_MODEL_SIZE = "distil-medium.en"  # Mejor precisión y velocidad que 'medium' en inglés; usa 'large-v2' si tienes buena GPU
